@@ -1,46 +1,93 @@
+"""WarpFactory spherical shell construction; see docs/testing.md for limitations."""
 import numpy as np
-from datetime import date as _date
+from pywarp.metrics.minkowski.metric_get_minkowski import metric_get_minkowski
+from pywarp.units.universal_constants.c import c
+from pywarp.units.universal_constants.G import G
 
-def metric_get_warp_shell_comoving(grid_size, world_centre, m, R_1, R_2, R_buff, sigma, smooth_factor, v_warp, do_warp, grid_scaling):
 
-    if R_buff is None:
-        R_buff = 0
+def _cumtrapz(y, x):
+    return np.concatenate(([0.0], np.cumsum((y[1:] + y[:-1]) * np.diff(x) / 2)))
 
-    if sigma is None:
-        sigma = 0
 
-    if smooth_factor is None:
-        smooth_factor = 0
+def _smooth(values, span):
+    # MATLAB smooth's centered moving average, with shrinking endpoint windows.
+    width = int(span * len(values)) if 0 < span < 1 else int(span)
+    width = min(width, len(values))
+    width = max(1, width - (width % 2 == 0))
+    idx = np.arange(len(values))
+    radius = np.minimum(np.minimum(idx, len(values)-1-idx), width//2)
+    sums = np.concatenate(([0.0], np.cumsum(values)))
+    return (sums[idx+radius+1] - sums[idx-radius]) / (2*radius+1)
 
-    if v_warp is None:
-        v_warp = 0
 
-    if do_warp is None:
-        do_warp = 0
+def metric_get_warp_shell_comoving(grid_size, world_centre, m, R_1, R_2,
+                                    R_buff=0, sigma=0, smooth_factor=1,
+                                    v_warp=0, do_warp=False, grid_scaling=None):
+    """Build the static shell, optionally adding the upstream x-directed shift.
 
-    if grid_scaling is None:
-        grid_scaling = np.array([1, 1, 1, 1])
-
-    metric = {}
-
-    metric['type'] = "metric"
-    metric['name'] = "Comoving Warp Shell"
-    metric['scaling'] = grid_scaling
-    metric['coords'] = "cartesian" 
-    metric['index'] = "covariant" 
-    metric['date'] = _date.today().isoformat()
-
-    world_size = np.sqrt(((grid_size[1] * grid_scaling[1] - world_centre[1]) ** 2) + ((grid_size[2] * grid_scaling[2] - world_centre[2]) ** 2) + ((grid_size[3] * grid_scaling[3] - world_centre[3]) ** 2))
-    r_sample_res = 10e+5
-    r_sample = np.linspace(0, world_size * 1.2, r_sample_res)
-
-    rho = np.zeros(1, r_sample.size) + (m / ((4 / 3) * np.pi * ((R_2 ** 3) - (R_1 ** 3)))) * ((r_sample > R_1) & (r_sample < R_2))
-
-    metric['params'] = {}
-
-    metric['params']['rho'] = rho 
-
-    max_R = np.argmin(np.diff(rho > 0))
-    max_R = r_sample(max_R)
-
+    Radial profiles use 100,000 samples and linear interpolation. The shell
+    must be outside its Schwarzschild radius. Smoothing is a sample span
+    (or a fraction of the radial sample count when strictly between 0 and 1).
+    """
+    R_buff = 0 if R_buff is None else R_buff
+    sigma = 0 if sigma is None else sigma
+    smooth_factor = 1 if smooth_factor is None else smooth_factor
+    v_warp = 0 if v_warp is None else v_warp
+    if grid_size[0] != 1:
+        raise ValueError("Comoving warp shell requires one time slice")
+    if not (m >= 0 and 0 <= R_1 < R_2 and 0 <= 2*R_buff < R_2-R_1):
+        raise ValueError("Require nonnegative mass, 0 <= R_1 < R_2, and a valid buffer")
+    if smooth_factor < 0 or sigma < 0:
+        raise ValueError("Smoothing and sigmoid sharpness must be nonnegative")
+    metric = metric_get_minkowski(grid_size, grid_scaling)
+    metric["name"] = "Comoving Warp Shell"
+    xyz = np.meshgrid(*[(np.arange(grid_size[i])+1)*metric["scaling"][i]
+                        - world_centre[i] for i in range(1, 4)], indexing="ij")
+    radius = np.sqrt(sum(x*x for x in xyz))
+    r = np.linspace(0, 1.2*max(float(radius.max()), R_2), 100_000)
+    rho = m / (4*np.pi/3*(R_2**3-R_1**3)) * ((r > R_1) & (r < R_2))
+    mass = _cumtrapz(4*np.pi*rho*r*r, r)
+    rs = 2*G()*mass[-1]/c()**2
+    if rs >= 8*R_2/9:
+        raise ValueError("Shell exceeds the constant-density pressure model's compactness limit")
+    pressure = np.zeros_like(r)
+    inside = r < R_2
+    a = R_2*np.sqrt(R_2-rs)
+    b = np.sqrt(R_2**3-rs*r[inside]**2)
+    pressure[inside] = c()**2*rho[inside]*(a-b)/(b-3*a)
+    params = {"rho": rho.copy(), "P": pressure.copy(), "rVec": r}
+    for _ in range(4):
+        rho = _smooth(rho, 1.79*smooth_factor)
+        pressure = _smooth(pressure, smooth_factor)
+    mass = _cumtrapz(4*np.pi*rho*r*r, r)
+    compactness = np.zeros_like(r)
+    compactness[1:] = 2*G()*mass[1:]/r[1:]/c()**2
+    if np.any(compactness >= 1):
+        raise ValueError("Shell profile contains a coordinate horizon")
+    B = 1/(1-compactness)
+    dalpha = np.zeros_like(r)
+    dalpha[1:] = (G()*mass[1:]/c()**2 + 4*np.pi*G()*r[1:]**3*pressure[1:]/c()**4) / (r[1:]**2*(1-compactness[1:]))
+    alpha = _cumtrapz(dalpha, r)
+    alpha += 0.5*np.log1p(-compactness[-1])-alpha[-1]
+    A = -np.exp(2*alpha)
+    shift = np.ones_like(r)
+    low, high = R_1+R_buff, R_2-R_buff
+    shift[r >= high] = 0
+    transition = (r > low) & (r < high)
+    exponent = (high-low)*(sigma+2)/2 * (1/(r[transition]-high)+1/(r[transition]-low))
+    shift[transition] = 1/(1+np.exp(-np.clip(exponent, -700, 700)))
+    for _ in range(2):
+        shift = _smooth(shift, smooth_factor)
+    metric["tensor"][0, 0, 0] = np.interp(radius, r, A)
+    radial = np.interp(radius, r, B)-1
+    direction = [np.divide(x, radius, out=np.zeros_like(x), where=radius != 0) for x in xyz]
+    for i in range(3):
+        for j in range(i, 3):
+            metric["tensor"][i+1, j+1, 0] = (i == j)+radial*direction[i]*direction[j]
+            metric["tensor"][j+1, i+1, 0] = metric["tensor"][i+1, j+1, 0]
+    if do_warp:
+        metric["tensor"][0, 1, 0] = -v_warp*np.interp(radius, r, shift)
+        metric["tensor"][1, 0] = metric["tensor"][0, 1]
+    params.update(rhosmooth=rho, Psmooth=pressure, M=mass, A=A, B=B)
+    metric["params"] = params
     return metric

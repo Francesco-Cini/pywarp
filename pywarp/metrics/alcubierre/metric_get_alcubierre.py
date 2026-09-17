@@ -12,7 +12,7 @@ def metric_get_alcubierre(
         v: float,
         R: float,
         sigma: float,
-        grid_scale: np.ndarray | None
+        grid_scale: np.ndarray | None = None
 ) -> dict:
     """Builds the Alcubierre metric.
 

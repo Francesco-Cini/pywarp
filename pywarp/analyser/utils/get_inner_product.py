@@ -1,28 +1,12 @@
-import numpy as np
-
-from pywarp.solver.verify_tensor import verify_tensor
-from pywarp.solver.utils.strcmpi import strcmpi
 from pywarp.solver.utils.c4_inv import c4_inv
 
+
 def get_inner_product(vec_a, vec_b, metric):
-
-    if not verify_tensor(metric, 1):
-        raise Exception("Metric is not verified. Please verifty metric using verify_tensor(metric).")
-    
-    s = metric['tensor'][0][0].shape
-    innerprod = np.zeros(s)
-
-    if not strcmpi(vec_a['index'], vec_b['index']):
-        for mu in range(4):
-            for nu in range(4):
-                innerprod = innerprod + vec_a['field'][mu] * vec_b['field'][nu]
-
-    elif strcmpi(vec_a['index'], vec_b['index']):
-        if strcmpi(vec_a['index'], metric['index']):
-            metric['tensor'] = c4_inv(metric['tensor'])
-
-        for mu in range(4):
-            for nu in range(4):
-                innerprod = innerprod + vec_a['field'][mu] * vec_b['field'][nu] * metric['tensor'][mu][nu]
-
-    return innerprod
+    """Contract vectors in either index convention without changing inputs."""
+    if vec_a["index"].lower() != vec_b["index"].lower():
+        return sum(vec_a["field"][i] * vec_b["field"][i] for i in range(4))
+    g = metric["tensor"]
+    if vec_a["index"].lower() == metric["index"].lower():
+        g = c4_inv(g)
+    return sum(vec_a["field"][i] * vec_b["field"][j] * g[i][j]
+               for i in range(4) for j in range(4))

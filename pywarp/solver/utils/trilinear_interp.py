@@ -2,36 +2,22 @@ import numpy as np
 
 
 def trilinear_interp(f, x):
-
-    x = np.asarray(x) + 10 ** (-8)
-
-    x_d = (x[0] - np.floor(x[0])) / (np.ceil(x[0]) - np.floor(x[0]))
-    y_d = (x[1] - np.floor(x[1])) / (np.ceil(x[1]) - np.floor(x[1]))
-    z_d = (x[2] - np.floor(x[2])) / (np.ceil(x[2]) - np.floor(x[2]))
-
-    c_00 = (
-        f[int(np.floor(x[0])) - 1, int(np.floor(x[1])) - 1, int(np.floor(x[2])) - 1] * (1 - x_d)
-        + f[int(np.ceil(x[0])) - 1, int(np.floor(x[1])) - 1, int(np.floor(x[2])) - 1] * x_d
-    )
-
-    c_01 = (
-        f[int(np.floor(x[0])) - 1, int(np.floor(x[1])) - 1, int(np.ceil(x[2])) - 1] * (1 - x_d)
-        + f[int(np.ceil(x[0])) - 1, int(np.floor(x[1])) - 1, int(np.ceil(x[2])) - 1] * x_d
-    )
-
-    c_10 = (
-        f[int(np.floor(x[0])) - 1, int(np.ceil(x[1])) - 1, int(np.floor(x[2])) - 1] * (1 - x_d)
-        + f[int(np.ceil(x[0])) - 1, int(np.ceil(x[1])) - 1, int(np.floor(x[2])) - 1] * x_d
-    )
-
-    c_11 = (
-        f[int(np.floor(x[0])) - 1, int(np.ceil(x[1])) - 1, int(np.ceil(x[2])) - 1] * (1 - x_d)
-        + f[int(np.ceil(x[0])) - 1, int(np.ceil(x[1])) - 1, int(np.ceil(x[2])) - 1] * x_d
-    )
-
-    c_0 = c_00 * (1 - y_d) + c_10 * y_d
-    c_1 = c_01 * (1 - y_d) + c_11 * y_d
-     
-    c = c_0 * (1 - z_d) + c_1 * z_d
-
-    return c
+    """Interpolate a 3D field using WarpFactory's one-based grid coordinates."""
+    f = np.asarray(f)
+    point = np.asarray(x, dtype=float) - 1
+    if f.ndim != 3 or point.shape != (3,):
+        raise ValueError("Expected a 3D field and three coordinates")
+    if not np.isfinite(point).all() or np.any(point < 0) or np.any(point > np.array(f.shape)-1):
+        raise ValueError("Interpolation point is outside the field")
+    lower = np.floor(point).astype(int)
+    upper = np.minimum(lower+1, np.array(f.shape)-1)
+    fraction = point-lower
+    result = 0.0
+    for i in range(2):
+        for j in range(2):
+            for k in range(2):
+                bits = np.array([i,j,k])
+                index = np.where(bits, upper, lower)
+                weight = np.prod(np.where(bits, fraction, 1-fraction))
+                result += weight*f[tuple(index)]
+    return result

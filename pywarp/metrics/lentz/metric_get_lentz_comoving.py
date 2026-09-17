@@ -2,15 +2,15 @@ import numpy as np
 from datetime import date as _date
 
 from pywarp.metrics.set_minkowski_three_plus_one import set_minkowski_three_plus_one
-from pywarp.units.universal_constants.c import c 
+from pywarp.units.universal_constants.c import c
 from pywarp.metrics.three_plus_one_builder import three_plus_one_builder
 
 def metric_get_lentz_comoving(
-        grid_size: np.ndarray, 
-        world_centre: np.ndarray, 
-        v: float, 
-        scale, 
-        grid_scale: np.ndarray | None
+        grid_size: np.ndarray,
+        world_centre: np.ndarray,
+        v: float,
+        scale,
+        grid_scale: np.ndarray | None = None
         ) -> dict:
 
     if scale is None:
@@ -21,14 +21,14 @@ def metric_get_lentz_comoving(
 
     if grid_size[0] > 1:
         raise Exception("The time grid is greater than 1, only a size of 1 can be used for Lentz")
-    
+
     metric = {}
 
     metric['params'] = {}
 
     metric['params']['grid_size'] = grid_size
     metric['params']['world_centre'] = world_centre
-    metric['params']['velocity'] = v 
+    metric['params']['velocity'] = v
 
     metric['type'] = "metric"
     metric['name'] = "Lentz Comoving"
@@ -39,20 +39,20 @@ def metric_get_lentz_comoving(
 
     alpha, beta, gamma = set_minkowski_three_plus_one(grid_size)
 
-    t = 1 
+    t = 0
 
     for i in range(grid_size[1]):
         for j in range(grid_size[2]):
             for k in range(grid_size[3]):
 
-                x = i * grid_scale[1] - world_centre[1]
-                y = j * grid_scale[2] - world_centre[2]
+                x = (i + 1) * grid_scale[1] - world_centre[1]
+                y = (j + 1) * grid_scale[2] - world_centre[2]
 
                 WFX, WFY = get_warp_factor_by_region(x, y, scale)
 
                 beta[0][t, i, j, k] = v * (1 - WFX)
                 beta[1][t, i, j, k] = v * WFY
-    
+
     metric['tensor'] = three_plus_one_builder(alpha, beta, gamma)
 
     return metric
@@ -85,7 +85,7 @@ def get_warp_factor_by_region(x_in, y_in, size_scale):
     elif (x >= -size_scale and x <= size_scale) and (x + size_scale > y):
         WFX = 1
         WFY = 0
-    
-    WFY = np.sign(y_in) * WFY 
+
+    WFY = np.sign(y_in) * WFY
 
     return WFX, WFY

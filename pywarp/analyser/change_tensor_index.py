@@ -1,121 +1,40 @@
 import numpy as np
 
-from pywarp.solver.utils.strcmpi import strcmpi
 from pywarp.solver.utils.c4_inv import c4_inv
 
-def change_tensor_index(
-        input_tensor, 
-        index, 
-        metric_tensor=None
-        ):
-    """ Changes a tensor's index.
-    Parameters
-    ----------
 
-    Returns
-    -------
-    """
-
-    # Handle default input arguments
-    if metric_tensor is None:
-        if not strcmpi(input_tensor['type'], "metric"):
-            raise Exception("metric_tensor is needed as third input when changing index of non-metric tensors.")
-        
+def change_tensor_index(input_tensor, index, metric_tensor=None):
+    """Return a new tensor dictionary; never alter either input tensor."""
+    states = {"covariant": (False, False), "contravariant": (True, True),
+              "mixedupdown": (True, False), "mixeddownup": (False, True)}
+    index = index.lower()
+    source = input_tensor["index"].lower()
+    if index not in states or source not in states:
+        raise ValueError("Unknown tensor index convention")
+    output = dict(input_tensor)
+    if input_tensor["type"].lower() == "metric":
+        if index.startswith("mixed") or source.startswith("mixed"):
+            raise ValueError("Metric tensors cannot use mixed indices")
+        output["tensor"] = (c4_inv(input_tensor["tensor"]) if source != index
+                            else [[v.copy() for v in row] for row in input_tensor["tensor"]])
     else:
-        if strcmpi(metric_tensor['index'], "mixedupdown") or strcmpi(metric_tensor['index'], "mixeddownup"):
-            raise Exception("Metric tensor cannot be used in mixed index.")
-    
-    # Check for if the index transformation exists
-    if not (strcmpi(index, "mixedupdown") or strcmpi(index, "mixeddownup") or strcmpi(index, "covariant") or strcmpi(index, "contravariant")):
-        raise Exception("Transformation selected is not allowed, use either: covariant, contravariant, mixedupdown, mixeddownup")
-    
-    # Transformations
-    output_tensor = input_tensor
-    if strcmpi(input_tensor['type'], "metric"):
-        if (strcmpi(input_tensor['index'], "covariant") and strcmpi(index, "contravariant")) and (strcmpi(input_tensor['index'], "contravariant") and strcmpi(index, "covariant")):
-            output_tensor = c4_inv(input_tensor['tensor'])
-        elif strcmpi(input_tensor['index'], "mixedupdown") and strcmpi(input_tensor['index'], "mixeddownup"):
-            raise Exception("Input tensor is a Metric tensor of mixed index.")
-        elif strcmpi(index, "mixedupdown") and strcmpi(index, "mixeddownup"):
-            raise Exception("Cannot convert a metric tensor to mixed index.")
+        if metric_tensor is None:
+            raise ValueError("metric_tensor is required for non-metric tensors")
+        metric_index = metric_tensor["index"].lower()
+        if metric_index not in ("covariant", "contravariant"):
+            raise ValueError("Metric tensors cannot use mixed indices")
+        lower = (metric_tensor["tensor"] if metric_index == "covariant"
+                 else c4_inv(metric_tensor["tensor"]))
+        upper = (metric_tensor["tensor"] if metric_index == "contravariant"
+                 else c4_inv(metric_tensor["tensor"]))
+        output["tensor"] = [[v.copy() for v in row] for row in input_tensor["tensor"]]
+        for axis in range(2):
+            if states[source][axis] != states[index][axis]:
+                factor = {"tensor": upper if states[index][axis] else lower}
+                output["tensor"] = (mix_index_1 if axis == 0 else mix_index_2)(output, factor)
+    output["index"] = index
+    return output
 
-    else:
-        # Contravariant/Covariant
-        if (strcmpi(input_tensor['index'], "covariant") and strcmpi(index, "contravariant")):
-            if strcmpi(metric_tensor['index'], "covariant"):
-                metric_tensor['tensor'] = c4_inv(metric_tensor['tensor'])
-                metric_tensor['index'] = "contravariant"
-            
-            output_tensor['tensor'] = flip_index(input_tensor, metric_tensor)
-
-        elif (strcmpi(input_tensor['index'], "contravariant") and strcmpi(index, "covariant")): 
-            if strcmpi(metric_tensor['index'], "contravariant"):
-                metric_tensor['tensor'] = c4_inv(metric_tensor['tensor'])
-                metric_tensor['index'] = "covariant"
-            
-            output_tensor['tensor'] = flip_index(input_tensor, metric_tensor)
-        
-        # To Mixed
-        elif strcmpi(input_tensor['index'], "contravariant") and strcmpi(index, "mixedupdown"):
-            if strcmpi(metric_tensor['index'], "contravariant"):
-                metric_tensor['tensor'] = c4_inv(metric_tensor['tensor'])
-                metric_tensor['index'] = "covariant"
-
-            output_tensor['tensor'] = mix_index_2(input_tensor, metric_tensor)
-
-        elif strcmpi(input_tensor['index'], "contravariant") and strcmpi(index, "mixeddownup"):
-            if strcmpi(metric_tensor['index'], "contravariant"):
-                metric_tensor['tensor'] = c4_inv(metric_tensor['tensor'])
-                metric_tensor['index'] = "covariant"
-
-            output_tensor['tensor'] = mix_index_1(input_tensor, metric_tensor)
-
-        elif strcmpi(input_tensor['index'], "covariant") and strcmpi(index, "mixedupdown"):
-            if strcmpi(metric_tensor['index'], "covariant"):
-                metric_tensor['tensor'] = c4_inv(metric_tensor['tensor'])
-                metric_tensor['index'] = "contravariant"
-
-            output_tensor['tensor'] = mix_index_1(input_tensor, metric_tensor)
-
-        elif strcmpi(input_tensor['index'], "covariant") and strcmpi(index, "mixeddownup"):
-            if strcmpi(metric_tensor['index'], "covariant"):
-                metric_tensor['tensor'] = c4_inv(metric_tensor['tensor'])
-                metric_tensor['index'] = "contravariant"
-
-            output_tensor['tensor'] = mix_index_2(input_tensor, metric_tensor)
-
-        # From Mixed
-        elif strcmpi(input_tensor['index'], "mixedupdown") and strcmpi(index, "contravariant"):
-            if strcmpi(metric_tensor['index'], "covariant"):
-                metric_tensor['tensor'] = c4_inv(metric_tensor['tensor'])
-                metric_tensor['index'] = "contravariant"
-
-            output_tensor['tensor'] = mix_index_2(input_tensor, metric_tensor)
-        
-        elif strcmpi(input_tensor['index'], "mixedupdown") and strcmpi(index, "covariant"):
-            if strcmpi(metric_tensor['index'], "contravariant"):
-                metric_tensor['tensor'] = c4_inv(metric_tensor['tensor'])
-                metric_tensor['index'] = "covariant"
-
-            output_tensor['tensor'] = mix_index_1(input_tensor, metric_tensor)
-        
-        elif strcmpi(input_tensor['index'], "mixeddownup") and strcmpi(index, "covariant"):
-            if strcmpi(metric_tensor['index'], "contravariant"):
-                metric_tensor['tensor'] = c4_inv(metric_tensor['tensor'])
-                metric_tensor['index'] = "covariant"
-
-            output_tensor['tensor'] = mix_index_2(input_tensor, metric_tensor)
-
-        elif strcmpi(input_tensor['index'], "mixeddownup") and strcmpi(index, "contravariant"):
-            if strcmpi(metric_tensor['index'], "covariant"):
-                metric_tensor['tensor'] = c4_inv(metric_tensor['tensor'])
-                metric_tensor['index'] = "contravariant"
-
-            output_tensor['tensor'] = mix_index_1(input_tensor, metric_tensor)
-
-    output_tensor["index"] = index
-
-    return output_tensor
 
 def flip_index(
         input_tensor, 

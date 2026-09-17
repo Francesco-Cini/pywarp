@@ -1,10 +1,10 @@
 from array_api_compat import array_namespace
 
-def take_finite_difference_1(A, k, delta, phi_phi_flag):
+def take_finite_difference_1(A, k, delta, phi_phi_flag=0):
 
     s = A.shape
     xp = array_namespace(A)
-    B = xp.zeros_like(A)        
+    B = xp.zeros_like(A, dtype=xp.float64)
 
     if s[k] >= 5:
         match k:

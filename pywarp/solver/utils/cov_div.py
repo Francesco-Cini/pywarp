@@ -1,37 +1,28 @@
 from pywarp.solver.utils.take_finite_difference_1 import take_finite_difference_1
+from pywarp.solver.utils.second_order.take_finite_difference_1_2 import take_finite_difference_1_2
 from pywarp.solver.utils.get_christoffel_sym import get_christoffel_sym
+from pywarp.units.universal_constants.c import c
 
-def cov_div(g_l, g_u, vec_u, vec_d, idx_div, idx_vec, delta, stair_sel):
 
-    diff_1_gl = [[[None for _ in range(4)] for _ in range(4)] for _ in range(4)]
+def cov_div(g_l, g_u, vec_u, vec_d, idx_div, idx_vec, delta, stair_sel, diff_order="fourth"):
+    """Covariant derivative on a Cartesian (t,x,y,z) grid in the ct basis."""
+    if diff_order not in ("second", "fourth"):
+        raise ValueError("diff_order must be second or fourth")
+    derivative = take_finite_difference_1_2 if diff_order == "second" else take_finite_difference_1
 
-    s = g_l[0][0].shape
+    def partial(field, axis):
+        value = derivative(field, axis, delta)
+        return value / c() if axis == 0 else value
 
-    for i in range(4):
-        for j in range(4):
-            if i == 2 and j == 2 and s[1] == 1:
-                phi_phi_flag = 1
-            else:
-                phi_phi_flag = 0
-            
-            for k in range(4):
-                diff_1_gl[i][j][k] = take_finite_difference_1(g_l[i][j], k, delta, phi_phi_flag)
-
+    diff = [[[partial(g_l[i][j], k) for k in range(4)] for j in range(4)] for i in range(4)]
     if stair_sel == 0:
-        cd_vec = take_finite_difference_1(vec_d[idx_vec], idx_div, delta, 0)
-        
+        result = partial(vec_d[idx_vec], idx_div)
         for i in range(4):
-            gamma = get_christoffel_sym(g_u, diff_1_gl, i, idx_vec, idx_div)
-            cd_vec = cd_vec - gamma * vec_d[i]
-
+            result = result - get_christoffel_sym(g_u, diff, i, idx_vec, idx_div) * vec_d[i]
     elif stair_sel == 1:
-        cd_vec = take_finite_difference_1(vec_u[idx_vec], idx_div, delta, 0)
-
+        result = partial(vec_u[idx_vec], idx_div)
         for i in range(4):
-            gamma = get_christoffel_sym(g_u, diff_1_gl, idx_vec, idx_div, i)
-            cd_vec = cd_vec + gamma * vec_u[i]
-
+            result = result + get_christoffel_sym(g_u, diff, idx_vec, idx_div, i) * vec_u[i]
     else:
-        raise Exception("Invalid variance selected")
-    
-    return cd_vec
+        raise ValueError("Invalid variance selected")
+    return result

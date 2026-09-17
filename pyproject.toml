@@ -5,12 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "warp-factory-py"
 version = "0.1.0"
+requires-python = ">=3.10"
 dependencies = [
     "array-api-compat",
     "numpy",
 ]
 
 [project.optional-dependencies]
+plot = ["matplotlib>=3.8"]
 test = [
     "pytest>=8",
     "pytest-cov>=5",

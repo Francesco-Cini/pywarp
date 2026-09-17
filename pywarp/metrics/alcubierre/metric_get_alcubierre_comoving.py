@@ -12,7 +12,7 @@ def metric_get_alcubierre_comoving(
         v: float, 
         R: float, 
         sigma: float, 
-        grid_scale: np.ndarray | None
+        grid_scale: np.ndarray | None = None
         ) -> dict:
     """
     Parameters
@@ -43,19 +43,19 @@ def metric_get_alcubierre_comoving(
     metric['scaling'] = grid_scale
     metric['coords'] = "cartesian"
     metric['index'] = "covariant"
-    metric['data'] = _date.today().isoformat()
+    metric['date'] = _date.today().isoformat()
 
     alpha, beta, gamma = set_minkowski_three_plus_one(grid_size)
 
 
-    t = 1
+    t = 0
     for i in range(grid_size[1]):
         for j in range (grid_size[2]):
             for k in range (grid_size[3]):
                 
-                x = i * grid_scale[1] - world_centre[1]
-                y = j * grid_scale[2] - world_centre[2]
-                z = k * grid_scale[3] - world_centre[3]
+                x = (i + 1) * grid_scale[1] - world_centre[1]
+                y = (j + 1) * grid_scale[2] - world_centre[2]
+                z = (k + 1) * grid_scale[3] - world_centre[3]
 
                 r = ((x ** 2) + (y ** 2) + (z ** 2)) ** (1 / 2)
 

@@ -10,7 +10,7 @@ def metric_get_lentz(
         world_centre: np.ndarray, 
         v: float, 
         scale, 
-        grid_scale: np.ndarray | None
+        grid_scale: np.ndarray | None = None
         ) -> dict:
 
     if scale is None:
@@ -40,19 +40,19 @@ def metric_get_lentz(
         for j in range(grid_size[2]):
             for k in range(grid_size[3]):
 
-                x = i * grid_scale[1] - world_centre[1]
-                y = j * grid_scale[2] - world_centre[2]
+                x = (i + 1) * grid_scale[1] - world_centre[1]
+                y = (j + 1) * grid_scale[2] - world_centre[2]
                 
                 for t in range(grid_size[0]):
 
-                    xs = (t * grid_scale[0] - world_centre[0]) * v * c()
+                    xs = ((t + 1) * grid_scale[0] - world_centre[0]) * v * c()
 
                     xp = x - xs 
 
                     WFX, WFY = get_warp_factor_by_region(xp, y, scale)
 
                     beta[0][t, i, j, k] = - WFX * v
-                    beta[1][t, i, j, k] = - WFY * v
+                    beta[1][t, i, j, k] = WFY * v
 
     metric['tensor'] = three_plus_one_builder(alpha, beta, gamma)
 
@@ -67,12 +67,12 @@ def get_warp_factor_by_region(x_in, y_in, size_scale):
     WFY = 0
     
     if (x >= size_scale and x <= 2 * size_scale) and (x - size_scale >= y):
-        WFX = 0.2
+        WFX = -2
         WFY = 0
 
     elif (x > size_scale and x <= 2 * size_scale) and (x - size_scale <= y) and (-y + 3 * size_scale >= x):
         WFX = -1
-        WFX = 1
+        WFY = 1
     
     elif (x > 0 and x <= size_scale) and (x + size_scale > y) and (-y + size_scale < x):
         WFX = 0

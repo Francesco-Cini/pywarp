@@ -174,7 +174,7 @@ def get_eulerian_transformation_matrix(g, coords=None):
     else:
         raise Exception("Unrecognised matrix size")
 
-    if np.isinf(M).any():
+    if not np.isfinite(M).all():
         raise Exception(
             "Eulerian Transformation is Infinite - Numerical Precision Insufficient"
         )

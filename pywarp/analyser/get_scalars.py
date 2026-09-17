@@ -6,7 +6,8 @@ from pywarp.solver.utils.cov_div import cov_div
 from pywarp.solver.utils.c4_inv import c4_inv
 from pywarp.analyser.utils.get_trace import get_trace
 
-def get_scalars(metric):
+def get_scalars(metric, diff_order="fourth"):
+    metric = change_tensor_index(metric, "covariant")
 
     shape = metric["tensor"][0][0].shape
     array_metric_tensor = np.empty((*shape, 4, 4))
@@ -46,9 +47,10 @@ def get_scalars(metric):
 
     delta = np.asarray(metric.get('scaling', np.ones(4)))
 
+    inverse_metric = c4_inv(metric['tensor'])
     for i in range(4):
         for j in range(4):
-            del_u[i][j] = cov_div(metric['tensor'], c4_inv(metric['tensor']), u_up_cell, u_down_cell, i, j, delta, 0)
+            del_u[i][j] = cov_div(metric['tensor'], inverse_metric, u_up_cell, u_down_cell, i, j, delta, 0, diff_order)
 
     P_mix = [[None for _ in range(4)] for _ in range(4)]
     P = [[None for _ in range(4)] for _ in range(4)]

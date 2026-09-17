@@ -20,14 +20,17 @@ def ricci_t(gu, gl, delta):
 
             for k in range(4):
                 diff_1_gl[i][j][k] = take_finite_difference_1(gl[i][j], k, delta, phi_phi_flag)
-                if k == 1:
+                if k == 0:
                     diff_1_gl[i][j][k] = (1 / c()) * diff_1_gl[i][j][k]
 
                 for n in range(k,4):
                     diff_2_gl[i][j][k][n] = take_finite_difference_2(gl[i][j], k, n, delta, phi_phi_flag)
 
-                    if (n == 1 and k != 1) or (n != 1 and k == 1):
+                    if (n == 0 and k != 0) or (n != 0 and k == 0):
                         diff_2_gl[i][j][k][n] = (1 / c()) * diff_2_gl[i][j][k][n]
+
+                    if k == 0 and n == 0:
+                        diff_2_gl[i][j][k][n] = diff_2_gl[i][j][k][n] / c()**2
 
                     if k != n:
                         diff_2_gl[i][j][n][k] = diff_2_gl[i][j][k][n]

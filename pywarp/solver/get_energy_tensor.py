@@ -10,7 +10,7 @@ from pywarp.gpu import (
 from pywarp.solver.utils.met_2_den import met_2_den
 from pywarp.solver.utils.second_order.met_2_den_2 import met_2_den_2
 
-def get_energy_tensor(metric, diff_order, *, gpu=None):
+def get_energy_tensor(metric, diff_order="fourth", *, gpu=None):
 
     if diff_order is None:
         diff_order = 'fourth'
@@ -20,7 +20,6 @@ def get_energy_tensor(metric, diff_order, *, gpu=None):
     
     if not strcmpi(metric['index'], "covariant"):
         metric = change_tensor_index(metric, "covariant")
-        print(f"Changed metric from %s index to %s index\n", {metric["index"]}, "covariant")
     
     if gpu is not None:
         metric_tensor_gpu = [[None for _ in range(4)] for _ in range(4)]

@@ -13,7 +13,7 @@ from pywarp.gpu import (
     asnumpy as gpu_asnumpy
 )
 
-def get_energy_conditions(energy_tensor, metric, condition, num_angular_vec, num_time_vec, return_vec, gpu=None):
+def get_energy_conditions(energy_tensor, metric, condition, num_angular_vec=None, num_time_vec=None, return_vec=None, gpu=None):
 
     # Handle default input arguments
     if num_angular_vec is None:
@@ -41,6 +41,12 @@ def get_energy_conditions(energy_tensor, metric, condition, num_angular_vec, num
     if not verify_tensor(energy_tensor, 1):
         raise Exception("Stress-energy is not verified. Please verify stress-eenergy using verify_tensor(EnergyTensor)")
 
+    import copy
+    energy_tensor = copy.deepcopy(energy_tensor)
+    metric = copy.deepcopy(metric)
+    if num_angular_vec < 1 or num_time_vec < 1:
+        raise ValueError("Vector sample counts must be positive")
+
     if gpu is not None:
         energy_tensor_gpu = energy_tensor
         metric_gpu = metric
@@ -58,6 +64,9 @@ def get_energy_conditions(energy_tensor, metric, condition, num_angular_vec, num
     # Convert energy tensor into the local inertial frame if not eulerian
     energy_tensor = do_frame_transfer(metric, energy_tensor, "Eulerian", gpu)
 
+    # Components are now in an orthonormal frame: use Minkowski to raise/lower.
+    metric = metric_get_minkowski(np.array([a, b, c, d]))
+
     # -------------------
     # Build Vector Fields
     # -------------------
@@ -70,9 +79,9 @@ def get_energy_conditions(energy_tensor, metric, condition, num_angular_vec, num
     vec_field = generate_uniform_field(type, num_angular_vec, num_time_vec, gpu)
 
     # Declare variables to be determined in theeval of energy conditions
-    map_array = np.full((a, b, c, d), np.nan)
+    map_array = np.full((a, b, c, d), -np.inf if strcmpi(condition, "Dominant") else np.inf)
     if return_vec == 1:
-        vec = np.zeros((a, b, c, d, num_angular_vec, num_time_vec))
+        vec = np.zeros((a, b, c, d, num_angular_vec) + (() if type == "nulllike" else (num_time_vec,)))
 
     # ----------------------
     # Find energy conditions
@@ -134,6 +143,8 @@ def get_energy_conditions(energy_tensor, metric, condition, num_angular_vec, num
             # Find inner product to determine if timelike or null
             diff = get_inner_product(vector, vector, metric_minkowski)
             diff = np.sign(diff) * np.sqrt(np.abs(diff))
+            # Causality alone also admits past-directed flux: enforce future direction.
+            diff = np.maximum(diff, -temp[..., 0])
             
             map_array = np.maximum(map_array, diff)
             
@@ -164,7 +175,7 @@ def get_energy_conditions(energy_tensor, metric, condition, num_angular_vec, num
 
                 for mu in range(4):
                     for nu in range(4):
-                        temp = temp + (energy_tensor['tensor'][mu][nu] - 0.5 * e_trace * metric_minkowski['tensor'][mu][nu] * vec_field[mu][ii][jj] * vec_field[nu][ii][jj])
+                        temp = temp + (energy_tensor['tensor'][mu][nu] - 0.5 * e_trace * metric_minkowski['tensor'][mu][nu]) * vec_field[mu][ii][jj] * vec_field[nu][ii][jj]
         
                 map_array = np.minimum(map_array, temp)
                 if return_vec == 1:

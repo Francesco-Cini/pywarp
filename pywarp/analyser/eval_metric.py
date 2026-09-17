@@ -3,7 +3,8 @@ from pywarp.analyser.do_frame_transfer import do_frame_transfer
 from pywarp.analyser.get_energy_conditions import get_energy_conditions
 from pywarp.analyser.get_scalars import get_scalars
 
-def eval_metric(metric, keep_positive, num_angular_vec, num_time_vec, gpu=None):
+def eval_metric(metric, keep_positive=True, num_angular_vec=100, num_time_vec=10, gpu=None, *, diff_order="fourth"):
+    """Evaluate stress-energy, sampled energy conditions and Eulerian scalars."""
 
     # Handle default input arguments
     if keep_positive is None:
@@ -21,15 +22,15 @@ def eval_metric(metric, keep_positive, num_angular_vec, num_time_vec, gpu=None):
     output['metric'] = metric
     
     #Energy tensor outputs
-    output['energy_tensor'] = get_energy_tensor(metric)
+    output['energy_tensor'] = get_energy_tensor(metric, diff_order, gpu=gpu)
     output['energy_tensor_eulerian'] = do_frame_transfer(metric, output['energy_tensor'], "Eulerian")
 
     #Energy condition outputs
 
-    output['null'] = get_energy_conditions(output['energy_tensor'], metric, "Null", num_angular_vec, num_time_vec, 0, gpu)
-    output['weak'] = get_energy_conditions(output['energy_tensor'], metric, "Weak", num_angular_vec, num_time_vec, 0, gpu)
-    output['strong'] = get_energy_conditions(output['energy_tensor'], metric, "Strong", num_angular_vec, num_time_vec, 0, gpu)
-    output['dominant'] = get_energy_conditions(output['energy_tensor'], metric, "Dominant", num_angular_vec, num_time_vec, 0, gpu)
+    output['null'] = get_energy_conditions(output['energy_tensor_eulerian'], metric, "Null", num_angular_vec, num_time_vec, 0, gpu)
+    output['weak'] = get_energy_conditions(output['energy_tensor_eulerian'], metric, "Weak", num_angular_vec, num_time_vec, 0, gpu)
+    output['strong'] = get_energy_conditions(output['energy_tensor_eulerian'], metric, "Strong", num_angular_vec, num_time_vec, 0, gpu)
+    output['dominant'] = get_energy_conditions(output['energy_tensor_eulerian'], metric, "Dominant", num_angular_vec, num_time_vec, 0, gpu)
 
     if not keep_positive:
         output['null'][output['null'] > 0] = 0
@@ -37,6 +38,6 @@ def eval_metric(metric, keep_positive, num_angular_vec, num_time_vec, gpu=None):
         output['strong'][output['strong'] > 0] = 0
         output['dominant'][output['dominant'] > 0] = 0
 
-    output['expansion'], output['shear'], output['vorticity'] = get_scalars(metric)
+    output['expansion'], output['shear'], output['vorticity'] = get_scalars(metric, diff_order=diff_order)
 
     return output

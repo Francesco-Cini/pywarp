@@ -8,9 +8,20 @@ def get_momentum_flow_lines(energy_tensor, start_points, step_size, max_steps, s
     if not strcmpi(energy_tensor['index'], "contravariant"):
         raise Exception("Energy tensor for momentum flowlines should be contravariant.")
     
-    x_mom = np.squeeze(energy_tensor['tensor'][0][1]) * scale_factor
-    y_mom = np.squeeze(energy_tensor['tensor'][0][2]) * scale_factor
-    z_mom = np.squeeze(energy_tensor['tensor'][0][3]) * scale_factor
+    if max_steps < 0 or step_size <= 0:
+        raise ValueError("max_steps must be nonnegative and step_size positive")
+
+    def spatial_field(component):
+        field = np.asarray(component)
+        if field.ndim == 4 and field.shape[0] == 1:
+            field = field[0]
+        if field.ndim != 3:
+            raise ValueError("Select one time slice before tracing momentum flow")
+        return field * scale_factor
+
+    x_mom = spatial_field(energy_tensor['tensor'][0][1])
+    y_mom = spatial_field(energy_tensor['tensor'][0][2])
+    z_mom = spatial_field(energy_tensor['tensor'][0][3])
 
     starting_points_x = np.ravel(start_points[0])
     starting_points_y = np.ravel(start_points[1])
@@ -23,6 +34,7 @@ def get_momentum_flow_lines(energy_tensor, start_points, step_size, max_steps, s
 
         pos[0, :] = np.array([starting_points_x[j], starting_points_y[j], starting_points_z[j]])
 
+        count = 1
         for i in range(max_steps):
             if (
                 np.sum(np.isnan(pos[i, :])) > 0
@@ -40,6 +52,8 @@ def get_momentum_flow_lines(energy_tensor, start_points, step_size, max_steps, s
             pos[i+1, 1] = pos[i, 1] + y_momentum * step_size
             pos[i+1, 2] = pos[i, 2] + z_momentum * step_size
 
-        paths[j] = pos[0:i, :]
+            count = i + 2
+
+        paths[j] = pos[:count, :]
 
     return paths

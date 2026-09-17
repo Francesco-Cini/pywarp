@@ -22,10 +22,10 @@ def custom_metric(grid_size, world_centre, grid_scaling, alpha_function, beta_fu
         for i in range(grid_size[1]):
             for j  in range(grid_size[2]):
                 for k in range(grid_size[3]):
-                    t = h * grid_scaling[0] - world_centre[0]
-                    x = i * grid_scaling[1] - world_centre[1]
-                    y = j * grid_scaling[2] - world_centre[2]
-                    z = k * grid_scaling[3] - world_centre[3]
+                    t = (h + 1) * grid_scaling[0] - world_centre[0]
+                    x = (i + 1) * grid_scaling[1] - world_centre[1]
+                    y = (j + 1) * grid_scaling[2] - world_centre[2]
+                    z = (k + 1) * grid_scaling[3] - world_centre[3]
 
                     alpha_field = alpha_function(t, x, y ,z)
                     beta_field = beta_function(t, x, y, z)

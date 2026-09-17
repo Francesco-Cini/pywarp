@@ -8,6 +8,7 @@ from pywarp.gpu import (
     asnumpy as gpu_asnumpy
 )
 from pywarp.solver.utils.met_2_den import met_2_den
+from pywarp.solver.utils.second_order.met_2_den_2 import met_2_den_2
 
 def get_energy_tensor(metric, diff_order, *, gpu=None):
 

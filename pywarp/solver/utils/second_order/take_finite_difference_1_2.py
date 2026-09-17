@@ -1,6 +1,4 @@
-from unittest import case
-
-import numpy as np
+from array_api_compat import array_namespace
 
 def take_finite_difference_1_2(
         A,
@@ -9,10 +7,11 @@ def take_finite_difference_1_2(
 ):
 
     s = A.shape
-    B = np.zeros(s)
+    xp = array_namespace(A)
+    B = xp.zeros_like(A, dtype=xp.float64)
 
-    if s(k) >= 3:
-        match k
+    if s[k] >= 3:
+        match k:
             case 0:
                 B[1:-1, :, :, :] = (A[2:, :, :, :] - A[:-2, :, :, :]) / (2 * delta[k])
                 B[0, :, :, :] = B[1, :, :, :]

@@ -7,7 +7,7 @@ def ein_e_2(
 ):
 
     G = 6.6740e-11 * units[2] ** 2 * units[1] / units[0] ** 3
-    c = 2.99792e+8 * units[2] / units[1]
+    c = 2.99792e+8 * units[2] / units[0]
 
     en_den_ = [[None for _ in range(4)] for _ in range(4)]
 
@@ -26,6 +26,6 @@ def ein_e_2(
             for alpha in range(4):
                 for beta in range(4):
 
-                    en_den[mu][nu] = en_den[mu][nu] * en_den_[alpha][beta] * g_u[alpha][mu] * g_u[beta][nu]
+                    en_den[mu][nu] = en_den[mu][nu] + en_den_[alpha][beta] * g_u[alpha][mu] * g_u[beta][nu]
     
     return en_den

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pywarp.metrics import metric_get_minkowski
+from pywarp.metrics.minkowski.metric_get_minkowski import metric_get_minkowski
 
 
 @pytest.fixture

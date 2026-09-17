@@ -1,4 +1,4 @@
-import numpy as np
+from array_api_compat import array_namespace
 
 def take_finite_difference_2_2(
         A,
@@ -8,7 +8,8 @@ def take_finite_difference_2_2(
 ):
 
     s = A.shape
-    B = np.zeros(s)
+    xp = array_namespace(A)
+    B = xp.zeros_like(A, dtype=xp.float64)
 
     if s[k_1] >= 3 and s[k_2] >= 3:
         if k_1 == k_2:
@@ -45,19 +46,38 @@ def take_finite_difference_2_2(
                 case 0:
                     match k_L:
                         case 1:
-
+                            B[x0, y0, :, :] = (
+                                A[x_1, y_1, :, :] - A[x_1, y1, :, :]
+                                - A[x1, y_1, :, :] + A[x1, y1, :, :]
+                            ) / (4 * delta[k_L] * delta[k_S])
                         case 2:
-
+                            B[x0, :, y0, :] = (
+                                A[x_1, :, y_1, :] - A[x_1, :, y1, :]
+                                - A[x1, :, y_1, :] + A[x1, :, y1, :]
+                            ) / (4 * delta[k_L] * delta[k_S])
                         case 3:
-
+                            B[x0, :, :, y0] = (
+                                A[x_1, :, :, y_1] - A[x_1, :, :, y1]
+                                - A[x1, :, :, y_1] + A[x1, :, :, y1]
+                            ) / (4 * delta[k_L] * delta[k_S])
                 case 1:
                     match k_L:
                         case 2:
-
+                            B[:, x0, y0, :] = (
+                                A[:, x_1, y_1, :] - A[:, x_1, y1, :]
+                                - A[:, x1, y_1, :] + A[:, x1, y1, :]
+                            ) / (4 * delta[k_L] * delta[k_S])
                         case 3:
-
+                            B[:, x0, :, y0] = (
+                                A[:, x_1, :, y_1] - A[:, x_1, :, y1]
+                                - A[:, x1, :, y_1] + A[:, x1, :, y1]
+                            ) / (4 * delta[k_L] * delta[k_S])
                 case 2:
                     match k_L:
                         case 3:
+                            B[:, :, x0, y0] = (
+                                A[:, :, x_1, y_1] - A[:, :, x_1, y1]
+                                - A[:, :, x1, y_1] + A[:, :, x1, y1]
+                            ) / (4 * delta[k_L] * delta[k_S])
 
     return B

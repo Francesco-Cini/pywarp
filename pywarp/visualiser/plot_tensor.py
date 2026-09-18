@@ -1,94 +1,57 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from pywarp.solver.verify_tensor import verify_tensor
-from pywarp.solver.utils.strcmpi import strcmpi
-from pywarp.visualiser.utils.label_cartesian_axis import label_cartesian_axis
 from pywarp.visualiser.utils.get_slice_data import get_slice_data
 from pywarp.visualiser.utils.plot_component import plot_component
 
-def plot_tensor(tensor, alpha = None, sliced_planes = None, slice_locations = None):
 
-    # Default Input Arguments
-
-    if alpha is None:
-        alpha = 0.2
-
-    if sliced_planes is None:
-        sliced_planes = np.arrray([1, 4])
-
-    if slice_locations is None:
-        s = np.array(tensor.tensor[0][0]).shape
-        slice_centres = np.round((s+1)/2)
-        slice_locations[0] = slice_centres(sliced_planes[0])
-        slice_locations[1] = slice_centres(sliced_planes[1])
-
-    # Verify Tensor
-
-    if not verify_tensor(tensor, 1):
-        raise Exception("Tensor is not verified. Please verify tensor using verify_tensor(tensor)")
-
-    # Check that the sliced planes are different
-
-    if sliced_planes[0] == sliced_planes[1]:
-        raise Exception("Selected planes must not be the same, select two different planes to slice along.")
-
-    # Round slice_locations
-
-    slice_locations = np.round(slice_locations)
-
-    # Check that the slice_locations are inside the world
-
-    arr = np.array(tensor.tensor[0][0])
-
-    if (slice_locations[0] < 1 or slice_locations[1] < 1 or
-        slice_locations[0] > arr.shape[int(sliced_planes[0]) - 1] or
-        slice_locations[1] > arr.shape[int(sliced_planes[1]) - 1]):
-        slice_locations[0]
-        slice_locations[1]
-        np.array(tensor.tensor[0][0], sliced_planes[0]).shape
-        np.array(tensor.tensor[0][0], sliced_planes[0]).shape
-        raise Exception("slice_locations are outside the world.")
-
-    # Check tensor type
-
-    if strcmpi(tensor['type'], 'Metric'):
-        titleCharacter = 'g'
-    elif strcmpi(tensor['type'], 'Stress-Energy'):
-        titleCharacter = 'T'
-
-    # Check tensor index
-
-    if strcmpi(tensor['index'], 'covariant'):
-        titleAugment1 = '_{'
-        titleAugment2 = ''
-    elif strcmpi(tensor['index'], 'contravariant'):
-        titleAugment1 = '^{'
-        titleAugment2 = ''
-    elif strcmpi(tensor['index'], 'mixedupdown'):
-        titleAugment1 = '^{'
-        titleAugment2 = '}_{'
-    elif strcmpi(tensor['index'], 'mixeddownup'):
-        titleAugment1 = '_{'
-        titleAugment2 = '}_{'
-    
-    # Check that the coords are Cartesian
-
-    if strcmpi(tensor['coords'], 'cartesian'):
-        xLabelText, yLabelText = label_cartesian_axis(sliced_planes)
-
-        if strcmpi(tensor['index'], 'mixedupdown') or strcmpi(tensor['index'], 'mixeddownup'):
-            c1 = np.array([1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4])
-            c2 = np.array([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
-        
+def _slice_setup(tensor, sliced_planes, slice_locations):
+    if tensor.get("coords", "").lower() != "cartesian":
+        raise ValueError("Only Cartesian coordinates are supported")
+    planes = (1, 4) if sliced_planes is None else sliced_planes
+    indices = get_slice_data(planes, slice_locations, tensor)
+    axes = [i for i,index in enumerate(indices) if isinstance(index,slice)]
+    shape = np.shape(tensor["tensor"][0][0])
+    spacing = tensor.get("scaling")
+    centre = tensor.get("params", {}).get("world_centre", np.zeros(4))
+    coords, labels = [], []
+    for axis in axes:
+        label = ("t","x","y","z")[axis]
+        if spacing is None:
+            coords.append(np.arange(1,shape[axis]+1))
+            labels.append(f"{label} (grid index)")
         else:
-            c1 = np.array([1, 1, 1, 1, 2, 3, 4, 2, 2, 3])
-            c2 = np.array([1, 2, 3, 4, 2, 3, 4, 3, 4, 4])
-        
-        idx = get_slice_data(sliced_planes, slice_locations, tensor)
+            coords.append((np.arange(shape[axis])+1)*spacing[axis]-centre[axis])
+            labels.append(f"{label} ({'s' if axis == 0 else 'm'})")
+    return indices, coords, labels
 
-        for i in range(len(c1)):
-            plot_component()
-    
-    else:
-        raise Exception("Unknown coordinate system, must be: 'cartesian'")
 
-    return plot_tensor
+def _component_title(symbol, index, i, j):
+    if index == "covariant": return rf"${symbol}_{{{i}{j}}}$"
+    if index == "contravariant": return rf"${symbol}^{{{i}{j}}}$"
+    if index == "mixedupdown": return rf"${symbol}^{{{i}}}_{{{j}}}$"
+    return rf"${symbol}_{{{i}}}^{{{j}}}$"
+
+
+def plot_tensor(tensor, alpha=None, sliced_planes=None, slice_locations=None):
+    """Return (figure, 4x4 axes) for all components. Axes and slice cells are one-based.
+
+    Default slice fixes time and z at their middle cells. Call plt.show() or
+    figure.savefig(...) yourself. Coordinates use SI grid scaling if available.
+    """
+    if not verify_tensor(tensor, 1):
+        raise ValueError("Invalid tensor")
+    indices, coords, labels = _slice_setup(tensor, sliced_planes, slice_locations)
+    fig, axes = plt.subplots(4,4,figsize=(13,11),layout="constrained")
+    symbol = "g" if tensor["type"].lower() == "metric" else "T"
+    for i in range(4):
+        for j in range(4):
+            plot_component(np.asarray(tensor["tensor"][i][j])[indices],
+                           _component_title(symbol,tensor["index"].lower(),i,j),
+                           *labels, alpha=1 if alpha is None else alpha,
+                           ax=axes[i,j], x=coords[0], y=coords[1])
+    if all(not label.startswith("t ") for label in labels):
+        for ax in axes.flat:
+            ax.set_aspect("equal")
+    fig.suptitle(tensor.get("name", "Tensor"))
+    return fig, axes

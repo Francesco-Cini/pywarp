@@ -10,6 +10,7 @@ They do not require copying files into `pywarp/` or editing `sys.path`.
 | `python -m examples.basic.custom_metric` | Supply your own lapse, shift and spatial metric functions. |
 | `python -m examples.analysis.alcubierre` | Run a complete CPU analysis on a small curved metric. |
 | `python -m examples.analysis.compare_orders` | See second- and fourth-order errors shrink as the grid is refined. |
+| `python -m examples.visualisation.tensor_slices --output-dir figures` | Save the public tensor and 3+1 plots as PNG files. |
 | `python -m examples.visualisation.alcubierre_plots` | Run the existing multi-figure plotting demonstration; requires `pip install -e ".[plot]"`. |
 | `python -m benchmarks.alcubierre_timing` | Measure a small solver run on your machine. |
 

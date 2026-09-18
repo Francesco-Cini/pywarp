@@ -154,3 +154,10 @@ def test_public_curved_metric_energy():
         )
     assert np.all(np.isfinite(energy))
     np.testing.assert_array_equal(energy, energy.swapaxes(0, 1))
+
+
+
+def test_output_preserves_tuple_grid_scaling():
+    metric = metric_get_minkowski([1, 3, 3, 3], (1, 2, 3, 4))
+    result = get_energy_tensor(metric, "second")
+    assert result["scaling"] == (1, 2, 3, 4)

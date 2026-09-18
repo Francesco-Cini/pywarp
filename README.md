@@ -9,7 +9,7 @@ From the repository root, with Python 3.10 or newer:
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[test]"
+.\.venv\Scripts\python.exe -m pip install -e ".[test,plot]"
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe -m examples.basic.minkowski
 .\.venv\Scripts\python.exe -m examples.analysis.alcubierre
@@ -23,4 +23,12 @@ use `.venv/bin/python` in place of `.\.venv\Scripts\python.exe`.
 - [Second-order source conventions](pywarp/solver/utils/second_order/README.md)
 
 CPU checks cover both finite-difference orders and all built-in metric
-families. This is not yet a MATLAB parity certification or a GPU validation.
+families. Independent MATLAB fixtures cover representative flat/static/dynamic
+cases. DirectML has been tested on an AMD RX 580; CUDA requires a separate
+NVIDIA hardware run. Analysis postprocessing runs on CPU.
+
+- [Public API and plotting](docs/api.md)
+- [MATLAB comparisons and intentional differences](docs/reference-validation.md)
+- [GPU precision, hardware tests and benchmark](docs/gpu.md)
+- [Build and release checks](docs/releasing.md)
+- [Changelog](CHANGELOG.md)

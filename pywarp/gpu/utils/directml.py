@@ -1,10 +1,11 @@
+"""DirectML uses float32: some required float64 operators are unsupported."""
 def asarray(value):
     import torch 
     import torch_directml
 
     return torch.as_tensor(
         value,
-        dtype=torch.float64,
+        dtype=torch.float32,
         device=torch_directml.device(),
     )
 

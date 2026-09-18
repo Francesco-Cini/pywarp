@@ -1,8 +1,5 @@
 def label_cartesian_axis(plane):
-    labels = ["t", "x", "y", "z"]
-    shown_planes = 1
-
-    x_label_name = labels(shown_planes[0])
-    y_label_name = labels(shown_planes[1])
-    
-    return x_label_name, y_label_name
+    """Names of the two axes left after fixing the given one-based axes."""
+    if len(plane) != 2 or len(set(plane)) != 2 or any(p not in (1,2,3,4) for p in plane):
+        raise ValueError("Select two distinct axes between 1 and 4")
+    return tuple(label for i,label in enumerate(("t","x","y","z"),1) if i not in plane)

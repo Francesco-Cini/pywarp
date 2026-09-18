@@ -1,35 +1,23 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
 
-def plot_component(array, title_text, x_label_text, y_label_text, alpha = 0.2):
 
-    array = np.array(array)
-
-    fig = plt.figure()
-    fig.patch.set_facecolor("white")
-
-    ax = fig.add_subplot(111, projection="3d")
-
-    x = np.arange(1, array.shape[0] + 1)
-    y = np.arange(1, array.shape[1] + 1)
-
-    X, Y = np.meshgrid(x, y, indexing="ij")
-
-    surf = ax.plot_surface(X, Y, array, alpha = 1.0, linewidth = 0, antialiased = True)
-
-    surf.set_alpha(1)
-
-    ax.set_title(title_text)
-    ax.set_xlabel(x_label_text)
-    ax.set_ylabel(y_label_text)
-
-    plt.set_cmap("seismic")
-
-    ax.view_init(elev=90, azim=-90)
-
-    ax.set_xlim(1, array.shape[0])
-    ax.set_ylim(1, array.shape[1])
-
-    plt.show()
-
-    return plot_component
+def plot_component(array, title_text, x_label_text, y_label_text, alpha=1.0,
+                   *, ax=None, x=None, y=None):
+    """Plot a 2D component as a signed heatmap; return (figure, axes). No show()."""
+    values = np.asarray(array)
+    if values.ndim != 2 or not np.isfinite(values).all():
+        raise ValueError("Component must be a finite 2D array")
+    if not 0 <= alpha <= 1:
+        raise ValueError("alpha must be between zero and one")
+    if ax is None:
+        _, ax = plt.subplots(layout="constrained")
+    x = np.arange(1, values.shape[0]+1) if x is None else np.asarray(x)
+    y = np.arange(1, values.shape[1]+1) if y is None else np.asarray(y)
+    limit = float(np.max(np.abs(values))) or 1.0
+    mesh = ax.pcolormesh(x, y, values.T, shading="nearest", cmap="RdBu_r",
+                        norm=Normalize(-limit, limit), alpha=alpha, rasterized=True)
+    ax.set(title=title_text, xlabel=x_label_text, ylabel=y_label_text)
+    ax.figure.colorbar(mesh, ax=ax, shrink=0.8, pad=0.02)
+    return ax.figure, ax

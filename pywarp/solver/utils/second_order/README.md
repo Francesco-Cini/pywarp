@@ -14,6 +14,6 @@ The upstream MIT copyright and permission notice is retained in the root LICENSE
 - `ein_e_2` preserves the upstream rounded constants and unit formula;
   `units` has three entries (length, mass, time), with SI defaults `[1, 1, 1]`.
 - Determinants and inverses work pointwise for nested component lists or arrays.
-- Array allocation follows the input backend; GPU hardware parity is not yet verified.
+- Array allocation follows the input backend; DirectML hardware checks cover both orders; CUDA checks require an NVIDIA machine (see docs/gpu.md).
 
 Use `get_energy_tensor(metric, "second")` for the public solver entry point.

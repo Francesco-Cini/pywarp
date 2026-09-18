@@ -8,12 +8,9 @@ from pywarp.analyser.change_tensor_index import change_tensor_index
 from pywarp.metrics.minkowski.metric_get_minkowski import metric_get_minkowski
 from pywarp.analyser.utils.get_inner_product import get_inner_product
 from pywarp.analyser.utils.get_trace import get_trace
-from pywarp.gpu import (
-    asarray as gpu_asarray,
-    asnumpy as gpu_asnumpy
-)
 
 def get_energy_conditions(energy_tensor, metric, condition, num_angular_vec=None, num_time_vec=None, return_vec=None, gpu=None):
+    """Evaluate sampled conditions on CPU; gpu is retained for API compatibility."""
 
     # Handle default input arguments
     if num_angular_vec is None:
@@ -47,17 +44,8 @@ def get_energy_conditions(energy_tensor, metric, condition, num_angular_vec=None
     if num_angular_vec < 1 or num_time_vec < 1:
         raise ValueError("Vector sample counts must be positive")
 
-    if gpu is not None:
-        energy_tensor_gpu = energy_tensor
-        metric_gpu = metric
-        for i in range(4):
-            for j in range(4):
-                energy_tensor_gpu['tensor'][i][j] = gpu_asarray(energy_tensor['tensor'][i][j], library=gpu)
-                metric_gpu['tensor'][i][j] = gpu_asarray(metric['tensor'][i][j], library=gpu)
-
-        energy_tensor = energy_tensor_gpu
-        metric = metric_gpu
-
+    # Analysis is CPU float64. The public solver gathers device results before
+    # this stage; do not mix NumPy arrays with CuPy/DirectML tensors here.
     # Get size of spacetime 
     a, b, c, d = metric['tensor'][0][0].shape
 
@@ -76,7 +64,7 @@ def get_energy_conditions(energy_tensor, metric, condition, num_angular_vec=None
     elif strcmpi(condition, "Weak") or strcmpi(condition, "Strong"):
         type = "timelike"
 
-    vec_field = generate_uniform_field(type, num_angular_vec, num_time_vec, gpu)
+    vec_field = generate_uniform_field(type, num_angular_vec, num_time_vec)
 
     # Declare variables to be determined in theeval of energy conditions
     map_array = np.full((a, b, c, d), -np.inf if strcmpi(condition, "Dominant") else np.inf)

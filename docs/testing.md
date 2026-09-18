@@ -22,7 +22,9 @@ tests/                          Automated correctness checks
   analyser/                     Index changes, frames, conditions, scalars, flow
   numerical/                    Analytic curvature and convergence checks
   integration/                  Full workflows and executable examples
-  reference/                    Reserved for independently exported MATLAB data
+  reference/                    Frozen MATLAB outputs and parity tests
+  visualiser/                   Slices, labels, figure returns and saved images
+  gpu/                          Opt-in real device tests
 
 examples/                       Programs to read, run, and adapt
   basic/
@@ -67,12 +69,12 @@ Run these from the repository root in PowerShell:
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[test]"
+.\.venv\Scripts\python.exe -m pip install -e ".[test,plot]"
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
 `-e` installs the local project in editable mode: source changes are used
-without reinstalling. `[test]` adds pytest and its coverage plugin.
+without reinstalling. `[test]` adds pytest and its coverage plugin; `[plot]` adds Matplotlib.
 `-q` means quieter output. A dot means a passed case, `F` a failed assertion,
 and `E` an error that prevented a case from running. A nonzero exit status
 means the run failed. Read the first failure and its traceback before fixing
@@ -100,6 +102,7 @@ python -m benchmarks.alcubierre_timing
 `-k` selects test names, `-m` selects explicit markers, and `-x` stops on the
 first failure. The normal test run includes numerical and integration tests;
 none of the implemented CPU checks are hidden behind slow or GPU markers.
+Hardware tests skip unless you select `--gpu-backend`; CI uses `-m "not gpu"`.
 Coverage reports show which lines executed, not whether the numerical
 answers were correct. A high percentage is useful but not a correctness
 certificate.
@@ -175,14 +178,16 @@ operation does not silently modify its inputs.
   prescription, not a new general TOV solver. It uses 100,000 radial samples,
   centered moving-average smoothing, and **linear radial interpolation**
   rather than upstream's Legendre interpolation. Flat and Schwarzschild
-  exterior limits are tested; direct MATLAB parity remains outstanding.
+  exterior limits are tested; this interpolation choice intentionally differs
+  from MATLAB. Core Ricci/energy comparisons use separate Alcubierre fixtures.
 - Schwarzschild rejects grids containing its origin or coordinate horizon.
   Eulerian 3+1 analysis requires a positive-definite spatial metric and a
   real lapse, so use the exterior region for that workflow.
-- GPU hardware and exported MATLAB parity are separate future validation
-  work. `tests/reference/README.md` explains how to add reproducible fixtures.
-- The plotting demonstration is an example, not an automated visual-quality
-  test. The unfinished `plot_three_plus_one.py` remains outside this repair.
+- MATLAB fixtures and DirectML hardware checks now exist. See
+  `reference-validation.md` and `gpu.md` for coverage, intentional differences
+  and precision limits. CUDA hardware validation remains external.
+- Both public plotting functions now return figures and have automated slicing
+  and render checks. The plotting demonstration remains a user-facing example.
 
 ## Changes covered by this repair
 

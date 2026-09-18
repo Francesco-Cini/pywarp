@@ -1,10 +1,14 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "warp-factory-py"
 version = "0.1.0"
+description = "Numerical spacetime metrics, stress-energy and energy-condition analysis"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 dependencies = [
     "array-api-compat",
@@ -12,6 +16,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+cuda = ["cupy-cuda12x>=13"]
+directml = ["torch-directml==0.2.5.dev240914"]
+release = ["build>=1", "twine>=6"]
 plot = ["matplotlib>=3.8"]
 test = [
     "pytest>=8",
@@ -26,6 +33,7 @@ markers = [
     "numerical: convergence and accuracy checks",
     "parity: comparisons against MATLAB reference data",
     "performance: runtime and memory benchmarks",
+    "gpu: opt-in tests requiring a selected physical GPU backend",
     "slow: tests excluded from the default development suite",
 ]
 

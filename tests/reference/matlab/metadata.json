@@ -1,0 +1,71 @@
+{
+  "commit": "03b10cb02e73998af28db87201a43f2fa0e30319",
+  "runtime": "25.2.0.3042426 (R2025b) Update 1",
+  "generated_utc": "18-Sep-2026 09:08:35",
+  "c": 299792458.0,
+  "G": 6.674300000000001e-11,
+  "raw_json_sha256": "c3dcde22212ec685b4220ce676569d173b3da26e6aa4fdc843a5843524025808",
+  "compatibility": "CPU isgpuarray check; getEvenPointsOnSphere uses unchanged CPU formulas",
+  "cases": {
+    "minkowski": {
+      "grid": [
+        5,
+        5,
+        5,
+        5
+      ],
+      "spacing": [
+        8.339102379953801e-10,
+        0.5,
+        0.5,
+        0.5
+      ],
+      "center": [
+        2.5017307139861402e-09,
+        1.5,
+        1.5,
+        1.5
+      ]
+    },
+    "alcubierre_static": {
+      "grid": [
+        1,
+        5,
+        5,
+        5
+      ],
+      "spacing": [
+        8.339102379953801e-10,
+        0.5,
+        0.5,
+        0.5
+      ],
+      "center": [
+        8.339102379953801e-10,
+        1.5,
+        1.5,
+        1.5
+      ]
+    },
+    "alcubierre_dynamic": {
+      "grid": [
+        5,
+        5,
+        5,
+        5
+      ],
+      "spacing": [
+        8.339102379953801e-10,
+        0.5,
+        0.5,
+        0.5
+      ],
+      "center": [
+        2.5017307139861402e-09,
+        1.5,
+        1.5,
+        1.5
+      ]
+    }
+  }
+}

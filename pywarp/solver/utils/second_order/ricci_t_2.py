@@ -48,7 +48,7 @@ def _ricci_tensor(g_u, g_l, delta, *, cache_second, time_is_seconds):
 
     for i in range(4):
         for j in range(i, 4):
-            R_munu_temp = xp.zeros_like(g_l[0][0], dtype=xp.float64)
+            R_munu_temp = xp.zeros_like(g_l[0][0], dtype=g_l[0][0].dtype)
             diff_1_g_l_jXi = [diff_1_g_l[j][r][i] for r in range(4)]
             diff_1_g_l_iXj = [diff_1_g_l[i][r][j] for r in range(4)]
             diff_1_g_l_ijX = [diff_1_g_l[j][i][r] for r in range(4)]

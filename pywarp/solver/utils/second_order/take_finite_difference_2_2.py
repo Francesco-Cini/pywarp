@@ -7,9 +7,13 @@ def take_finite_difference_2_2(
         delta
 ):
 
+    if getattr(getattr(A, "device", None), "type", None) == "privateuseone":
+        from pywarp.gpu.utils.directml_derivatives import derivative
+        return derivative(A, k_1, delta, 2, second_axis=k_2)
+
     s = A.shape
     xp = array_namespace(A)
-    B = xp.zeros_like(A, dtype=xp.float64)
+    B = xp.zeros_like(A, dtype=A.dtype if xp.isdtype(A.dtype, "real floating") else xp.float64)
 
     if s[k_1] >= 3 and s[k_2] >= 3:
         if k_1 == k_2:

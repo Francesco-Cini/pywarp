@@ -31,3 +31,21 @@ def minkowski_metric(
     unit_grid_scaling: np.ndarray
 ) -> dict:
     return metric_get_minkowski(small_grid_size, unit_grid_scaling)
+
+def pytest_addoption(parser):
+    parser.addoption("--gpu-backend",default=None,choices=["cupy","torch-directml"],
+                     help="Opt into real hardware tests; a missing requested backend is a failure")
+
+
+@pytest.fixture(scope="session")
+def gpu_backend(request):
+    backend=request.config.getoption("--gpu-backend")
+    if backend is None:
+        pytest.skip("Select --gpu-backend=cupy or --gpu-backend=torch-directml to test hardware")
+    from pywarp.gpu import asarray,asnumpy
+    try:
+        value=asarray(np.array([1.,2.]),library=backend)
+        np.testing.assert_allclose(asnumpy(value*value),[1,4])
+    except Exception as exc:
+        pytest.fail(f"Requested GPU backend {backend} is unavailable: {exc}")
+    return backend

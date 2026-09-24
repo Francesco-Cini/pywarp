@@ -1,5 +1,7 @@
 from array_api_compat import array_namespace
 
+from pywarp.solver.utils.ricci_contractions import raised_derivatives
+
 from pywarp.units.universal_constants.c import c
 
 from pywarp.solver.utils.take_finite_difference_1 import take_finite_difference_1
@@ -15,7 +17,7 @@ def ricci_t(gu, gl, delta):
     diff_2_gl = [[[[None for _ in range(4)] for _ in range(4)] for _ in range(4)] for _ in range(4)]
 
     for i in range(4):
-        for j in range(4):
+        for j in range(i, 4):
             phi_phi_flag = 0 
 
             for k in range(4):
@@ -51,8 +53,10 @@ def ricci_t(gu, gl, delta):
             diff_2_gl[3][1][k][n] = diff_2_gl[1][3][k][n]
             diff_2_gl[3][2][k][n] = diff_2_gl[2][3][k][n]
 
+    raised, skew, connection = raised_derivatives(gu, diff_1_gl)
+
     for i in range(4):
-        for j in range(4):
+        for j in range(i, 4):
 
             R_munu_temp = xp.zeros_like(gl[0][0])
 
@@ -64,16 +68,9 @@ def ricci_t(gu, gl, delta):
 
                     for r in range(4):
 
-                        R_munu_temp_3 = xp.zeros_like(gl[0][0])
-                        R_munu_temp_4 = xp.zeros_like(gl[0][0])
-                        R_munu_temp_5 = xp.zeros_like(gl[0][0])
-
-                        for d in range(4):
-
-                            R_munu_temp_3 = R_munu_temp_3 + diff_1_gl[b][d][j] * gu[r][d]
-                            R_munu_temp_4 = R_munu_temp_4 + (diff_1_gl[j][d][b] - diff_1_gl[j][b][d]) * gu[r][d]
-
-                            R_munu_temp_5 = R_munu_temp_5 - (diff_1_gl[b][d][a] + diff_1_gl[b][d][a] - diff_1_gl[a][b][d]) * gu[r][d]
+                        R_munu_temp_3 = raised[j][b][r]
+                        R_munu_temp_4 = skew[j][b][r]
+                        R_munu_temp_5 = -connection[a][b][r]
 
                         R_munu_temp_2 = R_munu_temp_2 + R_munu_temp_4 * diff_1_gl[i][r][a] + (1 / 2) * (R_munu_temp_3 * diff_1_gl[a][r][i] + R_munu_temp_5 * (diff_1_gl[j][r][i] + diff_1_gl[i][r][j] - diff_1_gl[j][i][r]))
 

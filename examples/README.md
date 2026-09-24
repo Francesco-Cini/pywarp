@@ -13,6 +13,7 @@ They do not require copying files into `pywarp/` or editing `sys.path`.
 | `python -m examples.visualisation.tensor_slices --output-dir figures` | Save the public tensor and 3+1 plots as PNG files. |
 | `python -m examples.visualisation.alcubierre_plots` | Run the existing multi-figure plotting demonstration; requires `pip install -e ".[plot]"`. |
 | `python -m benchmarks.alcubierre_timing` | Measure a small solver run on your machine. |
+| `python -m benchmarks.backend_scaling --backend torch-directml` | Measure CPU/GPU scaling across grid sizes; requires the selected GPU backend. |
 
 Every script has a `main()` function and a `__main__` guard. Importing a
 script therefore does not start a simulation or open a plot. The four

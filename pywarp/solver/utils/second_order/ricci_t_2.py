@@ -1,5 +1,7 @@
 from array_api_compat import array_namespace
 
+from pywarp.solver.utils.ricci_contractions import raised_derivatives
+
 from pywarp.solver.utils.second_order.take_finite_difference_1_2 import take_finite_difference_1_2
 from pywarp.solver.utils.second_order.take_finite_difference_2_2 import take_finite_difference_2_2
 from pywarp.units.universal_constants.c import c
@@ -46,6 +48,8 @@ def _ricci_tensor(g_u, g_l, delta, *, cache_second, time_is_seconds):
                     for n in range(k, 4):
                         second(i, j, k, n)
 
+    raised, skew, connection = raised_derivatives(g_u, diff_1_g_l)
+
     for i in range(4):
         for j in range(i, 4):
             R_munu_temp = xp.zeros_like(g_l[0][0], dtype=g_l[0][0].dtype)
@@ -63,18 +67,14 @@ def _ricci_tensor(g_u, g_l, delta, *, cache_second, time_is_seconds):
                     ) * g_ab
 
                     for r in range(4):
-                        for d in range(4):
-                            # Second and third terms, directly from ricciT2.m.
-                            R_munu_temp = R_munu_temp + 0.5 * (
-                                0.5 * diff_1_g_l[a][r][i] * diff_1_g_l[b][d][j]
-                                + diff_1_g_l[i][r][a] * diff_1_g_l[j][d][b]
-                                - diff_1_g_l[i][r][a] * diff_1_g_l[j][b][d]
-                            ) * g_ab * g_u[r][d]
-                            R_munu_temp = R_munu_temp - 0.25 * (
-                                diff_1_g_l_jXi[r] + diff_1_g_l_iXj[r] - diff_1_g_l_ijX[r]
-                            ) * (
-                                2 * diff_1_g_l[b][d][a] - diff_1_g_l[a][b][d]
-                            ) * g_ab * g_u[r][d]
+                        # Contract d once and reuse across output components.
+                        R_munu_temp = R_munu_temp + 0.5 * (
+                            0.5 * diff_1_g_l[a][r][i] * raised[j][b][r]
+                            + diff_1_g_l[i][r][a] * skew[j][b][r]
+                        ) * g_ab
+                        R_munu_temp = R_munu_temp - 0.25 * (
+                            diff_1_g_l_jXi[r] + diff_1_g_l_iXj[r] - diff_1_g_l_ijX[r]
+                        ) * connection[a][b][r] * g_ab
 
             R_munu[i][j] = R_munu_temp
             R_munu[j][i] = R_munu_temp

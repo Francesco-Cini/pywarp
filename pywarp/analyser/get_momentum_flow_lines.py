@@ -3,11 +3,35 @@ import numpy as np
 from pywarp.solver.utils.strcmpi import strcmpi
 from pywarp.solver.utils.trilinear_interp import trilinear_interp
 
-def get_momentum_flow_lines(energy_tensor, start_points, step_size, max_steps, scale_factor):
 
-    if not strcmpi(energy_tensor['index'], "contravariant"):
+def get_momentum_flow_lines(
+    energy_tensor, start_points, step_size, max_steps, scale_factor
+):
+    """Trace momentum-flow paths by explicit Euler integration.
+
+    Parameters
+    ----------
+    energy_tensor : dict
+        Contravariant stress-energy tensor containing 3D component fields
+        or 4D fields with a singleton time axis.
+    start_points : array_like, shape (3, ...)
+        Starting x, y, and z coordinates in one-based grid units.
+    step_size : float
+        Positive integration step multiplying the sampled momentum.
+    max_steps : int
+        Maximum number of integration steps, at least zero.
+    scale_factor : float
+        Multiplier applied to each momentum component.
+
+    Returns
+    -------
+    paths : list of ndarrays
+        One array of shape (n_steps + 1, 3) per seed. Paths stop at the
+        interpolation boundary or a NaN position.
+    """
+    if not strcmpi(energy_tensor["index"], "contravariant"):
         raise Exception("Energy tensor for momentum flowlines should be contravariant.")
-    
+
     if max_steps < 0 or step_size <= 0:
         raise ValueError("max_steps must be nonnegative and step_size positive")
 
@@ -19,9 +43,9 @@ def get_momentum_flow_lines(energy_tensor, start_points, step_size, max_steps, s
             raise ValueError("Select one time slice before tracing momentum flow")
         return field * scale_factor
 
-    x_mom = spatial_field(energy_tensor['tensor'][0][1])
-    y_mom = spatial_field(energy_tensor['tensor'][0][2])
-    z_mom = spatial_field(energy_tensor['tensor'][0][3])
+    x_mom = spatial_field(energy_tensor["tensor"][0][1])
+    y_mom = spatial_field(energy_tensor["tensor"][0][2])
+    z_mom = spatial_field(energy_tensor["tensor"][0][3])
 
     starting_points_x = np.ravel(start_points[0])
     starting_points_y = np.ravel(start_points[1])
@@ -32,8 +56,11 @@ def get_momentum_flow_lines(energy_tensor, start_points, step_size, max_steps, s
     for j in range(max(starting_points_x.shape)):
         pos = np.zeros((max_steps + 1, 3))
 
-        pos[0, :] = np.array([starting_points_x[j], starting_points_y[j], starting_points_z[j]])
+        pos[0, :] = np.array(
+            [starting_points_x[j], starting_points_y[j], starting_points_z[j]]
+        )
 
+        # Keep the interpolation stencil inside the one-based spatial grid.
         count = 1
         for i in range(max_steps):
             if (
@@ -42,15 +69,15 @@ def get_momentum_flow_lines(energy_tensor, start_points, step_size, max_steps, s
                 or (np.floor(pos[i, 1]) <= 1 or np.ceil(pos[i, 1]) >= x_mom.shape[1])
                 or (np.floor(pos[i, 2]) <= 1 or np.ceil(pos[i, 2]) >= x_mom.shape[2])
             ):
-                break 
+                break
 
             x_momentum = trilinear_interp(x_mom, pos[i, :])
             y_momentum = trilinear_interp(y_mom, pos[i, :])
             z_momentum = trilinear_interp(z_mom, pos[i, :])
-            
-            pos[i+1, 0] = pos[i, 0] + x_momentum * step_size
-            pos[i+1, 1] = pos[i, 1] + y_momentum * step_size
-            pos[i+1, 2] = pos[i, 2] + z_momentum * step_size
+
+            pos[i + 1, 0] = pos[i, 0] + x_momentum * step_size
+            pos[i + 1, 1] = pos[i, 1] + y_momentum * step_size
+            pos[i + 1, 2] = pos[i, 2] + z_momentum * step_size
 
             count = i + 2
 

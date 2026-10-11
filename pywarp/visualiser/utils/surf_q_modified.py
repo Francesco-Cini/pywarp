@@ -1,5 +1,6 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.ticker import ScalarFormatter
 
 
 def sqm(
@@ -30,17 +31,59 @@ def sqm(
     label_fontsize=8,
     tick_fontsize=7,
     box_aspect=(1, 1, 0.5),
-    **kwargs
+    **kwargs,
 ):
-    """
-    A more aesthetic MATLAB-like surf wrapper for matplotlib.
+    """Plot a themed MATLAB-style surface from Z or X, Y, Z arrays.
 
-    Usage:
-        surf_q_modified(Z)
-        surf_q_modified(X, Y, Z)
-        surf_q_modified(..., ax=ax)
-    """
+    Parameters
+    ----------
+    *args : array_like
+        A height array Z, or coordinate arrays X, Y, Z.
+        Z-only input is squeezed and transposed.
+    ax : matplotlib.axes.Axes or None, optional
+        Existing 3D axes. When None, create axes and call plt.show().
+    dark : bool, optional
+        Use the dark theme; defaults to true.
+    cmap : str or Colormap or None, optional
+        Surface colormap. Defaults to magma for dark themes, viridis otherwise.
+    figsize : tuple of float, optional
+        Width and height of a new figure in inches.
+    elev, azim : float, optional
+        Camera elevation and azimuth in degrees.
+    title : str or None, optional
+        Axes title.
+    xlabel, ylabel, zlabel : str, optional
+        Coordinate labels.
+    colorbar : bool, optional
+        Add a colourbar when true.
+    edgecolor : color, optional
+        Surface edge colour; defaults to no edges.
+    linewidth : float, optional
+        Surface edge width in points.
+    antialiased : bool, optional
+        Enable surface antialiasing.
+    pane_alpha, grid_alpha : float, optional
+        Opacity of the 3D panes and grid lines.
+    background_color : color or None, optional
+        Figure and axes background. None uses the theme default.
+    title_pad : float, optional
+        Title padding in points.
+    xlabel_pad, ylabel_pad, zlabel_pad : float, optional
+        Axis label padding in points.
+    tick_pad : float, optional
+        Tick-label padding in points.
+    title_fontsize, label_fontsize, tick_fontsize : float, optional
+        Font sizes in points.
+    box_aspect : tuple of float, optional
+        Relative lengths of the displayed x, y, and z axes.
+    **kwargs : dict
+        Additional keyword arguments passed to plot_surface.
 
+    Returns
+    -------
+    surface : mpl_toolkits.mplot3d.art3d.Poly3DCollection
+        The plotted surface artist.
+    """
     # ---------- Theme defaults ----------
     if dark:
         if cmap is None:
@@ -98,7 +141,7 @@ def sqm(
         edgecolor=edgecolor,
         linewidth=linewidth,
         antialiased=antialiased,
-        **kwargs
+        **kwargs,
     )
 
     # ---------- Axes styling ----------
@@ -108,32 +151,20 @@ def sqm(
         title if title is not None else "",
         color=text_color,
         pad=title_pad,
-        fontsize=title_fontsize
+        fontsize=title_fontsize,
     )
     ax.set_xlabel(
-        xlabel,
-        color=text_color,
-        labelpad=xlabel_pad,
-        fontsize=label_fontsize
+        xlabel, color=text_color, labelpad=xlabel_pad, fontsize=label_fontsize
     )
     ax.set_ylabel(
-        ylabel,
-        color=text_color,
-        labelpad=ylabel_pad,
-        fontsize=label_fontsize
+        ylabel, color=text_color, labelpad=ylabel_pad, fontsize=label_fontsize
     )
     ax.set_zlabel(
-        zlabel,
-        color=text_color,
-        labelpad=zlabel_pad,
-        fontsize=label_fontsize
+        zlabel, color=text_color, labelpad=zlabel_pad, fontsize=label_fontsize
     )
 
     ax.tick_params(
-        colors=text_color,
-        which="both",
-        pad=tick_pad,
-        labelsize=tick_fontsize
+        colors=text_color, which="both", pad=tick_pad, labelsize=tick_fontsize
     )
 
     try:
@@ -169,7 +200,7 @@ def sqm(
         try:
             axis._axinfo["grid"]["color"] = (
                 *plt.matplotlib.colors.to_rgb(grid_color),
-                grid_alpha
+                grid_alpha,
             )
             axis._axinfo["grid"]["linewidth"] = 0.8
         except Exception:

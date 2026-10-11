@@ -1,8 +1,10 @@
-import numpy as np
 import time
+
+import numpy as np
 
 from pywarp.metrics.alcubierre.metric_get_alcubierre import metric_get_alcubierre
 from pywarp.solver.get_energy_tensor import get_energy_tensor
+
 
 def main():
     grid_size = np.array([1, 9, 9, 9])
@@ -10,12 +12,12 @@ def main():
     velocity = 0.5
     R = 2
     sigma = 0.5
-    
+
     start_time = time.time()
-    
+
     metric = metric_get_alcubierre(grid_size, world_centre, velocity, R, sigma)
-    energy_tensor = get_energy_tensor(metric, "fourth")
-    
+    get_energy_tensor(metric, "fourth")
+
     elapsed_time = time.time() - start_time
     print(f"Elapsed time: {elapsed_time:.6f} s")
 

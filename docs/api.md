@@ -21,8 +21,14 @@ See the examples and metric modules for family-specific parameters.
 
 ```python
 energy = get_energy_tensor(metric, diff_order="fourth", gpu=None)
-result = eval_metric(metric, keep_positive=True, num_angular_vec=100,
-                     num_time_vec=10, gpu=None, diff_order="fourth")
+result = eval_metric(
+    metric,
+    keep_positive=True,
+    num_angular_vec=100,
+    num_time_vec=10,
+    gpu=None,
+    diff_order="fourth",
+)
 ```
 
 Import from `pywarp.solver.get_energy_tensor` and
@@ -51,6 +57,7 @@ Install `.[plot]`, then:
 
 ```python
 from pywarp.visualiser import plot_tensor, plot_three_plus_one
+
 fig, axes = plot_tensor(metric, sliced_planes=[1, 4], slice_locations=[1, 5])
 fig.savefig("metric.png", dpi=150)
 fig, axes = plot_three_plus_one(metric)

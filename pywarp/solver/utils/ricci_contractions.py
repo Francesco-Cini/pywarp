@@ -16,7 +16,9 @@ def raised_derivatives(inverse, derivative):
                 for d in range(4):
                     first = derivative[b][d][a] * inverse[r][d]
                     second = (derivative[a][d][b] - derivative[a][b][d]) * inverse[r][d]
-                    third = (2 * derivative[b][d][a] - derivative[a][b][d]) * inverse[r][d]
+                    third = (2 * derivative[b][d][a] - derivative[a][b][d]) * inverse[
+                        r
+                    ][d]
                     if d == 0:
                         raised[a][b][r] = first
                         skew[a][b][r] = second

@@ -1,27 +1,35 @@
 import numpy as np
+
 from pywarp.solver.utils.c3_inv import c3_inv
 
+
 def three_plus_one_builder(alpha, beta, gamma):
+    """Assemble a covariant spacetime metric from its 3+1 fields.
 
-    ## Three Plus One Builder: Builds the metric given input 3+1 components of alpha, beta, and gamma
+    Parameters
+    ----------
+    alpha : ndarray
+        Lapse field, with shape (nt, nx, ny, nz).
+    beta : list of arrays
+        Three covariant shift fields.
+    gamma : list of lists of arrays
+        Symmetric 3 by 3 covariant spatial-metric fields.
 
-    # INPUTS:
-    #alpha - (TxXxYxZ) lapse rate map across spacetime
-    #beta - {3}x(TxXxYxZ) (covariant assumed) shift vector map across spacetime
-    #gamma - {3x3}x(TxXxYxZ) (covariant assumed) spatial term map map across spacetime
+    Returns
+    -------
+    tensor : list of lists of arrays
+        A 4 by 4 component table; each component has the input grid shape.
 
-    ##
-
-    # Set up Spacial Components  
-
+    Notes
+    -----
+    The input shift is covariant. Its index is raised with the inverse
+    spatial metric when computing the time-time component.
+    """
     gamma_up = c3_inv(gamma)
-
-    # Find grid size
 
     s = alpha.shape
 
-    # Calculate beta_i
-
+    # Raise the covariant shift before forming beta_i * beta^i.
     beta_up = [None for _ in range(3)]
 
     for i in range(3):
@@ -29,24 +37,18 @@ def three_plus_one_builder(alpha, beta, gamma):
         for j in range(3):
             beta_up[i] = beta_up[i] + gamma_up[i][j] * beta[j]
 
-    # Create time-time component
-
     metric_tensor = [[None for _ in range(4)] for _ in range(4)]
 
-    metric_tensor[0][0] = -alpha ** 2
+    metric_tensor[0][0] = -(alpha**2)
     for i in range(3):
         metric_tensor[0][0] += beta_up[i] * beta[i]
 
-    # Create time-space components
-
-    for i in range(1,4):
-        metric_tensor[0][i] = beta[i-1]
+    for i in range(1, 4):
+        metric_tensor[0][i] = beta[i - 1]
         metric_tensor[i][0] = metric_tensor[0][i]
 
-    # Create space-space components
-
-    for i in range(1,4):
-        for j in range(1,4):
-            metric_tensor[i][j] = gamma[i-1][j-1]
+    for i in range(1, 4):
+        for j in range(1, 4):
+            metric_tensor[i][j] = gamma[i - 1][j - 1]
 
     return metric_tensor

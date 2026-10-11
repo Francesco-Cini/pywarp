@@ -32,3 +32,4 @@ NVIDIA hardware run. Analysis postprocessing runs on CPU.
 - [GPU precision, hardware tests and benchmark](docs/gpu.md)
 - [Build and release checks](docs/releasing.md)
 - [Changelog](CHANGELOG.md)
+- [Code style and development checks](docs/development.md)

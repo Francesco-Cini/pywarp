@@ -1,24 +1,33 @@
 """Install the built wheel in an isolated environment and test outside the checkout."""
+
 import argparse
-from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import venv
+from pathlib import Path
 
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--dist",type=Path,default=Path("dist"))
-    args=parser.parse_args()
-    wheels=list(args.dist.resolve().glob("warp_factory_py-*.whl"))
-    if len(wheels)!=1:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--dist", type=Path, default=Path("dist"))
+    args = parser.parse_args()
+    wheels = list(args.dist.resolve().glob("warp_factory_py-*.whl"))
+    if len(wheels) != 1:
         raise SystemExit("Expected exactly one wheel in the selected dist directory")
     with tempfile.TemporaryDirectory(prefix="pywarp-wheel-") as directory:
-        root=Path(directory)
-        venv.EnvBuilder(with_pip=True).create(root/"venv")
-        python=root/"venv"/("Scripts/python.exe" if sys.platform=="win32" else "bin/python")
-        subprocess.run([str(python),"-m","pip","install",str(wheels[0])+"[plot]"],check=True,cwd=root)
+        root = Path(directory)
+        venv.EnvBuilder(with_pip=True).create(root / "venv")
+        python = (
+            root
+            / "venv"
+            / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
+        )
+        subprocess.run(
+            [str(python), "-m", "pip", "install", str(wheels[0]) + "[plot]"],
+            check=True,
+            cwd=root,
+        )
         script = """
 import pathlib, pywarp, numpy as np
 import matplotlib
@@ -36,7 +45,8 @@ for plot in (plot_tensor,plot_three_plus_one):
     figure.canvas.draw()
 print('Installed wheel: both solvers, analysis and plots passed')
 """
-        subprocess.run([str(python),"-I","-c",script],check=True,cwd=root)
+        subprocess.run([str(python), "-I", "-c", script], check=True, cwd=root)
 
 
-if __name__=="__main__": main()
+if __name__ == "__main__":
+    main()

@@ -118,9 +118,9 @@ from pywarp.solver.utils.take_finite_difference_2 import take_finite_difference_
 
 
 def test_constant_field_has_zero_second_derivative():
-    field = np.ones((1, 7, 7, 7))            # Arrange an input with a known answer.
+    field = np.ones((1, 7, 7, 7))  # Arrange an input with a known answer.
     actual = take_finite_difference_2(field, 1, 1, np.ones(4))  # Act.
-    np.testing.assert_allclose(actual, 0, atol=1e-12)           # Assert.
+    np.testing.assert_allclose(actual, 0, atol=1e-12)  # Assert.
 ```
 
 `assert` expresses a claim. `assert_allclose` permits small floating-point

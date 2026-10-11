@@ -1,8 +1,21 @@
-import numpy as np
-
 def c3_inv(cell_array):
+    """Invert a 3 by 3 matrix of fields pointwise.
 
-    if len(cell_array) != 3 or any(len(row) !=3 for row in cell_array):
+    Parameters
+    ----------
+    cell_array : array or nested sequence of arrays
+        Matrix components indexed [i][j], with 3 rows and columns.
+
+    Returns
+    -------
+    inverse : list of lists of arrays
+        A 3 by 3 component table, with the same grid shape as the input.
+
+    Notes
+    -----
+    The matrix must be nonsingular at each grid cell.
+    """
+    if len(cell_array) != 3 or any(len(row) != 3 for row in cell_array):
         raise ValueError("Cell array is not 3x3")
 
     r = cell_array

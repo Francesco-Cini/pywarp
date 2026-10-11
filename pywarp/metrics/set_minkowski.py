@@ -1,7 +1,19 @@
 import numpy as np
 
-def set_minkowski(grid_size):
 
+def set_minkowski(grid_size):
+    """Allocate flat-spacetime metric components with signature (-, +, +, +).
+
+    Parameters
+    ----------
+    grid_size : array_like of int, shape (4,)
+        Number of samples along the (t, x, y, z) axes.
+
+    Returns
+    -------
+    tensor : list of lists of arrays
+        A 4 by 4 component table; each component has the input grid shape.
+    """
     metric = [[None for _ in range(4)] for _ in range(4)]
 
     metric[0][0] = -np.ones(grid_size)

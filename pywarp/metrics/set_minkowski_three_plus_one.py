@@ -1,18 +1,22 @@
 import numpy as np
 
+
 def set_minkowski_three_plus_one(grid_size):
-    """ SETMINKOWSKI: Returns the 3+1 format for flat space
+    """Allocate the lapse, shift, and spatial metric for flat spacetime.
 
-    INPUTS:
-    grid_size - World size in [t,x,y,z]
+    Parameters
+    ----------
+    grid_size : array_like of int, shape (4,)
+        Number of samples along the (t, x, y, z) axes.
 
-    OUTPUTS:
-    alpha - Lapse rate 4D array
-
-    beta - Shift vector, 1x3 cell of 4D arrays
- 
-    gamma - Spatial terms, 3x3 cell of 4D arrays.
-
+    Returns
+    -------
+    alpha : ndarray
+        Lapse field, with shape (nt, nx, ny, nz).
+    beta : list of arrays
+        Three covariant shift fields.
+    gamma : list of lists of arrays
+        Symmetric 3 by 3 covariant spatial-metric fields.
     """
     alpha = np.ones(grid_size)
 
